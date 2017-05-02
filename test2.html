@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">	
+		<title>Practice with elequent js :http://eloquentjavascript.net/05_higher_order.html</title>
+	</head>
+	<script type="text/javascript" src="eleauent_javascript/ancestry.js"></script>
+	<script type="text/javascript">
+		// Test how to use reduce.
+		var my_arr=[1, 8, 5, 4];
+		my_arr.reduce(
+			function (
+				accumulator,
+				currentValue,
+				currentIndex,
+				array
+			) {
+				return accumulator + currentValue;
+			}
+		);
+
+		var total = [ 0, 1, 2, 3 ].reduce(
+		( acc, cur ) => acc + cur, 0);
+		console.log("total:" + total);
+
+
+
+		/** Practice 1: flattening the following array with reduece and concat
+		 * Result:→ [1, 2, 3, 4, 5, 6]	
+		 */
+		var arrays = [[1, 2, 3], [4, 5], [6]];
+		var flatten_result = arrays.reduce(function(a, b){
+			return a.concat(b);
+		});
+		var flatten_result2 = arrays.reduce((a, b) => a.concat(b));
+		console.log(flatten_result);
+		console.log(flatten_result2);
+
+		/** Practice2 : Mother-child age difference (看了好多次，就是要叫你計算媽媽跟小孩年紀差距的平均值啦), refence : /eleauent_javascript/ancestry.js
+		* Result: → 31.2
+		*/
+		/*
+		var jsonData = '{"familys":[{"name" : "Bruce", "age" : 18, "sex" : "male"}, {"name" : "Sherry","age" : 16, "sex" : "famale"}]}';
+		var jsonObj = JSON.parse(jsonData);  // 將JSON格式資料轉為物件
+		console.log(jsonObj.familys[0].name); // Bruce
+		console.log(jsonObj.familys[1].age); // 16	
+		JSON.parse(jsonData, (key, value) => {console.log(value); return value;});
+		*/
+		function average(array) {
+			function plus(a, b) { return a + b; }			
+			return array.reduce(plus) / array.length;
+		}
+
+		// console.log("ANCESTRY_FILE ==> " + ANCESTRY_FILE);
+		var jsonData = JSON.parse(ANCESTRY_FILE);
+
+		var byName = {};
+		jsonData.forEach(function(person) {
+			byName[person.name] = person;
+		});
+
+		var childHasMotherInfo = jsonData.filter(function(person){
+			return person["mother"] != null;
+		});
+		
+		var diffArr = childHasMotherInfo.map(function(child){
+			var mm_name = child.mother;
+			function findMother(person) {
+				return person.name === mm_name;
+			}			
+			var mm = jsonData.find(findMother); // 找我媽媽在哪邊
+			if(undefined != mm && null !=mm) {
+				// console.log("child.name:" + child.name + ", child born:" + child.born) ;
+				// console.log("mm:" + mm.name + ", mm born:" +  mm.born);
+				// console.log("dif:" + (child.born - mm.born));	    
+				return child.born - mm.born;
+			}
+			return 0;						
+		});
+
+		console.log("diffArr:" + diffArr);
+		var remove_zero = diffArr.filter(function(a){
+			return a > 0;
+		})		
+		console.log(average(remove_zero));
+		
+		// 去參考一下這個寫得比較簡潔哦：https://gist.github.com/spamwax/99f1a2d9f21ed463d15
+		
+		
+		/** Practice 3: Historical life expectancy (計算每個世紀的人平均年齡)
+		*  Answer:
+			// → 16: 43.5
+			//   17: 51.2
+			//   18: 52.8
+			//   19: 54.8
+			//   20: 84.7
+			//   21: 94
+		*/
+					
+		var groupByCentury = {};
+		jsonData.forEach(function(person) {							
+			var century = String(Math.ceil(person.died / 100));			
+			var existGroupIndex = getObjectKeyIndex(groupByCentury, century);
+		
+			if(existGroupIndex < 0) {
+				groupByCentury[century] = [];			
+			} 				
+			groupByCentury[century].push(person.died - person.born);
+													
+		});
+
+		console.log("Historical life expectancy:");
+		for(var v in groupByCentury){
+			var avg = average(groupByCentury[v]);
+			console.log(v + "->" + avg + "(" + roundX(avg,10)+")");			
+		}
+		
+		function roundX(v, x){
+			return Math.round(v * x) / x; 
+		}
+
+		function getObjectKeyIndex(obj, keyToFind) {
+			var i = -1, key;
+			for (key in obj) {
+				if (key == keyToFind) {
+					i++;
+					return i;
+				}				
+			}
+			return i;
+		}
+		
+		//console.log("test get group:" + JSON.stringify(groupByCentury));
+	
+	
+		/** Practice 4: Every and then some
+		*  Answer:
+		*/
+		// 我的這個 every 寫得不好，使用 arr.forEach 會走完所有的元素長度，如果可以在中途就判斷到有一個不符合之後就馬上 return 會是比較好的。(所以直接用 for loop 會比較好)
+		const every = function(arr, testFun) {
+		var t = true;
+		arr.forEach(
+			function(ele) {
+			//console.log("ele:" + ele);
+			//console.log("testFun(ele):" + testFun(ele));
+				if(!testFun(ele))
+				t = false;      
+			} 
+		);
+		return t;
+		};
+
+		const some = function(arr, testFun) {
+			for(var a in arr) {
+				// console.log("testFun(a):" + testFun(arr[a]) + ", a:" + arr[a]);
+				if( testFun(arr[a])) return true;
+				
+			}
+			return false;
+		};
+
+		console.log("Every and then some:");
+		console.log(every([NaN, NaN, NaN], isNaN));
+		// → true
+		console.log(every([NaN, NaN, 4], isNaN));
+		// → false
+		console.log(some([NaN, 3, 4], isNaN));
+		// → true
+		console.log(some([2, 3, 4], isNaN));
+		// → false
+
+
+
+		/*
+		JSON.parse('{"1": 1, "2": 2, "3": {"4": 4, "5": {"6": 6}}}', (key, value) => {
+		console.log(key); // log the current property name, the last is "".
+		return value;     // return the unchanged property value.
+		});
+		*/
+	</script>
+</html>
+
